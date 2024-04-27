@@ -1,20 +1,21 @@
-use std::path::Path;
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
 use eyre::{Result, WrapErr};
-use grammers_client::types::media::Uploaded;
-use grammers_client::types::{Downloadable, Media, Message};
-use grammers_client::{Client, Config as ClientConfig, InputMessage, SignInError};
+use grammers_client::{
+    types::{media::Uploaded, Downloadable, Media, Message},
+    Client, Config as ClientConfig, InputMessage, SignInError,
+};
 use grammers_session::{PackedChat, Session};
 use mime::Mime;
 use mime_guess::mime;
 use secrecy::{ExposeSecret, SecretString};
-use tokio::fs::OpenOptions;
-use tokio::io::AsyncWriteExt;
+use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 use tracing::{debug, info, warn};
 
-use crate::prompt::{prompt, prompt_secret};
-use crate::Config;
+use crate::{
+    prompt::{prompt, prompt_secret},
+    Config,
+};
 
 #[tracing::instrument(skip_all, err)]
 pub async fn make_client(app_config: &Config) -> Result<Client> {
@@ -56,8 +57,10 @@ pub async fn login(client: &mut Client, app_config: &Config) -> Result<()> {
 
             while n_tries < 3 {
                 let tries_left = 3 - n_tries;
-                let prompt_message =
-                    format!("[{tries_left} / 3] Enter the password (hint {}): ", &hint);
+                let prompt_message = format!(
+                    "[{tries_left} / 3 tries left] Enter the password (hint {}): ",
+                    &hint
+                );
                 let password =
                     prompt_secret(prompt_message.as_str()).wrap_err("Failed to read password")?;
 
@@ -267,7 +270,7 @@ fn get_file_extension(media: &Media) -> String {
             if name.is_empty() {
                 get_mime_extension(document.mime_type())
             } else {
-                let ext = std::path::Path::new(name).extension().unwrap_or_default();
+                let ext = Path::new(name).extension().unwrap_or_default();
                 format!(".{}", ext.to_string_lossy())
             }
         }
