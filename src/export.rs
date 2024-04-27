@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use eyre::{Result, WrapErr};
+use grammers_client::types::media::Uploaded;
 use grammers_client::types::{Downloadable, Media, Message};
 use grammers_client::{Client, Config as ClientConfig, InputMessage, SignInError};
 use grammers_session::{PackedChat, Session};
@@ -168,47 +169,12 @@ pub async fn forward_message(
     let media = message.media();
 
     if let Some(media) = media {
-        info!("Downloading media");
+        info!("Message with media, reuploading");
 
-        let dest = format!(
-            "{}/message-{}{}",
-            app_config.media_path().to_string_lossy(),
-            &message.id().to_string(),
-            get_file_extension(&media)
-        );
-
-        // create media directory if it doesn't exist
-        std::fs::create_dir_all(app_config.media_path())
-            .wrap_err("Failed to create media directory")?;
-
-        let downloadable = Downloadable::Media(media);
-        let mut iter = client.iter_download(&downloadable);
-
-        while let Some(chunk) = iter.next().await.wrap_err("Failed to get next chunk")? {
-            debug!(chunk_size = chunk.len(), "Writing chunk");
-
-            let mut file = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&dest)
-                .await
-                .wrap_err("Failed to open media file")?;
-
-            file.write_all(&chunk)
-                .await
-                .wrap_err("Failed to write to media file")?;
-        }
-
-        message
-            .download_media(&Path::new(dest.as_str()))
+        let uploaded = reupload_media(client, app_config, &message, media)
             .await
-            .expect("Error downloading message");
-
-        info!("Media downloaded, reuploading");
-        let media_input = client.upload_file(&Path::new(dest.as_str())).await?;
-        info!("Media reuploaded");
-
-        forwarded = forwarded.file(media_input);
+            .wrap_err("Failed to reupload media")?;
+        forwarded = forwarded.file(uploaded);
     }
 
     client
@@ -218,6 +184,50 @@ pub async fn forward_message(
 
     info!("Message forwarded");
     Ok(())
+}
+
+#[tracing::instrument(skip_all, fields(message_id = message.id()))]
+pub async fn reupload_media(
+    client: &mut Client,
+    app_config: &Config,
+    message: &Message,
+    media: Media,
+) -> Result<Uploaded> {
+    let dest = format!(
+        "{}/message-{}{}",
+        app_config.media_path().to_string_lossy(),
+        &message.id().to_string(),
+        get_file_extension(&media)
+    );
+
+    // create media directory if it doesn't exist
+    tokio::fs::create_dir_all(app_config.media_path())
+        .await
+        .wrap_err("Failed to create media directory")?;
+
+    let downloadable = Downloadable::Media(media);
+    let mut iter = client.iter_download(&downloadable);
+
+    while let Some(chunk) = iter.next().await.wrap_err("Failed to get next chunk")? {
+        debug!(chunk_size = chunk.len(), "Writing chunk");
+
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&dest)
+            .await
+            .wrap_err("Failed to open media file")?;
+
+        file.write_all(&chunk)
+            .await
+            .wrap_err("Failed to write to media file")?;
+    }
+
+    info!("Media downloaded, reuploading");
+    let uploaded = client.upload_file(&Path::new(dest.as_str())).await?;
+    info!("Media reuploaded");
+
+    Ok(uploaded)
 }
 
 #[tracing::instrument(skip(client, target_chat, message), fields(message_id = message.id()), err)]

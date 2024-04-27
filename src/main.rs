@@ -1,4 +1,5 @@
 use eyre::{Result, WrapErr};
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter, Registry};
 use tracing_tree::HierarchicalLayer;
 
@@ -26,22 +27,30 @@ async fn main() -> Result<()> {
         .init();
 
     let app_config = envy::from_env::<Config>().wrap_err("Failed to parse config from env")?;
+
     let mut client = export::make_client(&app_config)
         .await
         .wrap_err("Failed to make client")?;
+    info!("Client created, logging in...");
     export::login(&mut client, &app_config)
         .await
         .wrap_err("Failed to login")?;
+    info!(
+        source_chat_id = app_config.source_chat_id(),
+        "Logged in, finding source chat..."
+    );
 
     let source_chat = export::find_chat(&mut client, app_config.source_chat_id())
         .await
         .wrap_err("Failed to find source chat")?;
-
+    info!("Found source chat, getting my user info...");
     let me = client.get_me().await.wrap_err("Failed to get me")?.pack();
+    info!(my_id = me.id, "Got my user info, starting export...");
 
     export::forward_all(&mut client, &app_config, source_chat, me)
         .await
         .wrap_err("Failed to forward messages")?;
+    info!("Export finished");
 
     Ok(())
 }
