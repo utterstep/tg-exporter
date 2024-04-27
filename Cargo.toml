@@ -1,0 +1,22 @@
+[package]
+name = "tg-exporter"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dotenvy = "0.15.7"
+envy = "0.4.2"
+secrecy = { version = "0.8.0", features = ["serde"] }
+serde = { version = "1.0.199", features = ["derive"] }
+tokio = { version = "1.37.0", features = ["full"] }
+grammers-client = { git = "https://github.com/Lonami/grammers" }
+grammers-session = { git = "https://github.com/Lonami/grammers" }
+eyre = "0.6.12"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-tree = "0.3.0"
+rpassword = "7.3.1"
+mime = "0.3.17"
+mime_guess = "2.0.4"
