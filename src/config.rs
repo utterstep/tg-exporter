@@ -17,6 +17,10 @@ fn default_media_path() -> PathBuf {
     "media".into()
 }
 
+fn default_sleep_duration() -> u64 {
+    2
+}
+
 #[derive(Deserialize)]
 pub struct Config {
     #[serde(default = "default_api_id")]
@@ -28,6 +32,8 @@ pub struct Config {
     session_path: PathBuf,
     #[serde(default = "default_media_path")]
     media_path: PathBuf,
+    #[serde(default = "default_sleep_duration")]
+    sleep_duration: u64,
 }
 
 impl Config {
@@ -53,5 +59,9 @@ impl Config {
 
     pub fn media_path(&self) -> &Path {
         &self.media_path
+    }
+
+    pub fn sleep_duration(&self) -> u64 {
+        self.sleep_duration
     }
 }

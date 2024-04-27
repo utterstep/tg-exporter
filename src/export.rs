@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::time::Duration;
 
 use eyre::{Result, WrapErr};
 use grammers_client::types::media::Uploaded;
@@ -129,7 +130,7 @@ pub async fn forward_all(
             .await
             .wrap_err("Failed to forward message")?;
 
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_secs(app_config.sleep_duration())).await;
     }
 
     Ok(())
