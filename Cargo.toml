@@ -10,13 +10,20 @@ dotenvy = "0.15.7"
 envy = "0.4.2"
 secrecy = { version = "0.8.0", features = ["serde"] }
 serde = { version = "1.0.199", features = ["derive"] }
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.37.0", features = [
+    "fs",
+    "macros",
+    "parking_lot",
+    "rt-multi-thread",
+] }
 grammers-client = { git = "https://github.com/Lonami/grammers" }
 grammers-session = { git = "https://github.com/Lonami/grammers" }
-eyre = "0.6.12"
+eyre = { version = "0.6.12", default-features = false, features = [
+    "track-caller",
+] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-tracing-tree = "0.3.0"
+tracing-tree = { version = "0.3.0", default-features = false }
 rpassword = "7.3.1"
 mime = "0.3.17"
 mime_guess = "2.0.4"

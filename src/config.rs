@@ -1,5 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
+use eyre::Context;
 use secrecy::SecretString;
 use serde::Deserialize;
 
@@ -22,7 +26,7 @@ fn default_sleep_duration() -> u64 {
 }
 
 #[derive(Deserialize)]
-pub struct Config {
+pub struct ConfigInner {
     #[serde(default = "default_api_id")]
     api_id: i32,
     api_hash: SecretString,
@@ -36,7 +40,7 @@ pub struct Config {
     sleep_duration: u64,
 }
 
-impl Config {
+impl ConfigInner {
     pub fn api_id(&self) -> i32 {
         self.api_id
     }
@@ -63,5 +67,27 @@ impl Config {
 
     pub fn sleep_duration(&self) -> u64 {
         self.sleep_duration
+    }
+}
+
+pub struct Config {
+    inner: Arc<ConfigInner>,
+}
+
+impl Config {
+    pub fn from_env() -> eyre::Result<Self> {
+        let config =
+            envy::from_env::<ConfigInner>().wrap_err("Failed to parse config from environment")?;
+        Ok(Self {
+            inner: Arc::new(config),
+        })
+    }
+}
+
+impl std::ops::Deref for Config {
+    type Target = ConfigInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }

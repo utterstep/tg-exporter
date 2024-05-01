@@ -8,7 +8,7 @@ use grammers_client::{
 use grammers_session::{PackedChat, Session};
 use mime::Mime;
 use mime_guess::mime;
-use secrecy::{ExposeSecret, SecretString};
+use secrecy::ExposeSecret;
 use tokio::{fs::OpenOptions, io::AsyncWriteExt};
 use tracing::{debug, info, warn};
 
@@ -46,8 +46,7 @@ pub async fn login(client: &mut Client, app_config: &Config) -> Result<()> {
     let phone_number =
         prompt("Enter your phone number: ").wrap_err("Failed to read phone number")?;
     let token = client.request_login_code(phone_number.trim()).await?;
-    let code: SecretString =
-        prompt_secret("Enter the code you received: ").wrap_err("Failed to read code")?;
+    let code = prompt_secret("Enter the code you received: ").wrap_err("Failed to read code")?;
     let signed_in = client.sign_in(&token, code.expose_secret().trim()).await;
 
     match signed_in {

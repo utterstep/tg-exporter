@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    let app_config = envy::from_env::<Config>().wrap_err("Failed to parse config from env")?;
+    let app_config = Config::from_env().wrap_err("Failed to load config")?;
 
     let mut client = export::make_client(&app_config)
         .await
