@@ -27,3 +27,7 @@ tracing-tree = { version = "0.3.0", default-features = false }
 rpassword = "7.3.1"
 mime = "0.3.17"
 mime_guess = "2.0.4"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"

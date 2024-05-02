@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use eyre::Context;
+use eyre::WrapErr;
 use secrecy::SecretString;
 use serde::Deserialize;
 
