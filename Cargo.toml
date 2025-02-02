@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 dotenvy = "0.15.7"
 envy = "0.4.2"
-secrecy = { version = "0.8.0", features = ["serde"] }
+secrecy = { version = "0.10.0", features = ["serde"] }
 serde = { version = "1.0.199", features = ["derive"] }
 tokio = { version = "1.37.0", features = [
     "fs",
@@ -23,11 +23,12 @@ eyre = { version = "0.6.12", default-features = false, features = [
 ] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-tracing-tree = { version = "0.3.0", default-features = false }
+tracing-tree = { version = "0.4.0", default-features = false }
 rpassword = "7.3.1"
 mime = "0.3.17"
-mime_guess = "2.0.4"
+mime_guess = "2.0.5"
 
 [profile.release]
 codegen-units = 1
 lto = "fat"
+panic = "abort"

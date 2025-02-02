@@ -31,6 +31,7 @@ pub struct ConfigInner {
     api_id: i32,
     api_hash: SecretString,
     source_chat_id: i64,
+    target_chat_id: Option<i64>,
     export_hashtags: String,
     #[serde(default = "default_session_path")]
     session_path: PathBuf,
@@ -67,6 +68,10 @@ impl ConfigInner {
 
     pub fn sleep_duration(&self) -> u64 {
         self.sleep_duration
+    }
+
+    pub fn target_chat_id(&self) -> Option<i64> {
+        self.target_chat_id
     }
 }
 

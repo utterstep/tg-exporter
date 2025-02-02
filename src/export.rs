@@ -9,7 +9,7 @@ use grammers_session::{PackedChat, Session};
 use mime::Mime;
 use mime_guess::mime;
 use secrecy::ExposeSecret;
-use tokio::{fs::OpenOptions, io::AsyncWriteExt};
+use tokio::{fs::OpenOptions, io::AsyncWriteExt, time::Instant};
 use tracing::{debug, info, warn};
 
 use crate::{
@@ -23,7 +23,7 @@ pub async fn make_client(app_config: &Config) -> Result<Client> {
         session: Session::load_file_or_create(app_config.session_path())
             .wrap_err("Failed to load session")?,
         api_id: app_config.api_id(),
-        api_hash: app_config.api_hash().expose_secret().clone(),
+        api_hash: app_config.api_hash().expose_secret().to_string(),
         params: Default::default(),
     };
 
@@ -172,6 +172,14 @@ pub async fn forward_message(
     let media = message.media();
 
     if let Some(media) = media {
+        if !matches!(
+            media,
+            Media::Photo(_) | Media::Document(_) | Media::Sticker(_) | Media::Contact(_)
+        ) {
+            info!("Skipping non-media message");
+            return Ok(());
+        }
+
         info!("Message with media, reuploading");
 
         let uploaded = reupload_media(client, app_config, &message, media)
@@ -211,19 +219,36 @@ pub async fn reupload_media(
     let downloadable = Downloadable::Media(media);
     let mut iter = client.iter_download(&downloadable);
 
-    while let Some(chunk) = iter.next().await.wrap_err("Failed to get next chunk")? {
-        debug!(chunk_size = chunk.len(), "Writing chunk");
-
+    // check if file already exists
+    if Path::new(&dest).exists() {
+        info!("File already exists, skipping");
+    } else {
         let mut file = OpenOptions::new()
             .create(true)
-            .append(true)
+            .truncate(true)
+            .write(true)
             .open(&dest)
             .await
             .wrap_err("Failed to open media file")?;
 
-        file.write_all(&chunk)
-            .await
-            .wrap_err("Failed to write to media file")?;
+        let mut file_size = 0;
+        let start_time = Instant::now();
+
+        while let Some(chunk) = iter.next().await.wrap_err("Failed to get next chunk")? {
+            file_size += chunk.len();
+
+            let elapsed = start_time.elapsed();
+            let speed = file_size as f64 / elapsed.as_secs_f64();
+            debug!(
+                file_size,
+                speed = format!("{:.2} MB/s", speed / 1024.0 / 1024.0),
+                "Downloaded next chunk"
+            );
+
+            file.write_all(&chunk)
+                .await
+                .wrap_err("Failed to write to media file")?;
+        }
     }
 
     info!("Media downloaded, reuploading");
@@ -280,9 +305,9 @@ fn get_file_extension(media: &Media) -> String {
 
 fn get_mime_extension(mime_type: Option<&str>) -> String {
     mime_type
-        .map(|m| {
-            let mime: Mime = m.parse().unwrap();
-            format!(".{}", mime.subtype())
+        .and_then(|m| {
+            let mime: Mime = m.parse().ok()?;
+            Some(format!(".{}", mime.subtype()))
         })
         .unwrap_or_default()
 }
