@@ -9,8 +9,8 @@ edition = "2021"
 dotenvy = "0.15.7"
 envy = "0.4.2"
 secrecy = { version = "0.10.0", features = ["serde"] }
-serde = { version = "1.0.199", features = ["derive"] }
-tokio = { version = "1.37.0", features = [
+serde = { version = "1.0.217", features = ["derive"] }
+tokio = { version = "1.43.0", features = [
     "fs",
     "macros",
     "parking_lot",
@@ -18,11 +18,9 @@ tokio = { version = "1.37.0", features = [
 ] }
 grammers-client = { git = "https://github.com/Lonami/grammers" }
 grammers-session = { git = "https://github.com/Lonami/grammers" }
-eyre = { version = "0.6.12", default-features = false, features = [
-    "track-caller",
-] }
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+eyre = "0.6.12"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 tracing-tree = { version = "0.4.0", default-features = false }
 rpassword = "7.3.1"
 mime = "0.3.17"
